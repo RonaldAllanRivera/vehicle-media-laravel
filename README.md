@@ -1,16 +1,15 @@
 # Vehicle Media Admin (Laravel 12 + Filament 4)
 
-Admin tool to search vehicle media by year range, make, model, trim, optional color, and transparent background, powered by Vehicle Databases API. Results show previews and allow ZIP downloads. Built for PHP-only hosting (SiteGround) using the TALL stack.
+Admin tool to search vehicle media by year, make, model, and trim, powered by Vehicle Databases API. Results show previews of vehicle images. Built with Laravel 12 and Filament 4 using the TALL stack.
 
 ## Features
-- Filament 4 admin panel (TALL stack)
-- Search by From/To Year (per-year API requests)
-- Filters: Make, Model, Trim, Color (optional), Transparent background (optional)
-- Exactly 10 images per API call (configurable cap)
-- Image previews grouped by category (exterior, interior, colors) when available
-- Download images as ZIP (streamed), temp cleanup
-- Robust API client with retries, throttling, and caching
-- All secrets in `.env`
+- [x] Filament 4 admin panel with authentication
+- [x] Vehicle Media Search page with form
+- [x] API client with retries, caching, and error handling
+- [x] Responsive UI with Tailwind CSS
+- [x] Unit and feature tests
+- [x] Image previews grouped by category (exterior, interior, colors)
+- [x] Configurable API settings via environment variables
 
 ## Requirements
 - PHP >= 8.2
@@ -43,10 +42,30 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
    - php artisan migrate
    - php artisan serve
 
+## Development Progress
+
+### Phase 1: Setup & Authentication ✅
+- [x] Initialize Laravel 12 project
+- [x] Install and configure Filament 4
+- [x] Set up authentication
+- [x] Configure Tailwind CSS with Vite
+
+### Phase 2: Core Functionality ✅
+- [x] Implement VehicleMediaClient service
+- [x] Create search interface in Filament
+- [x] Add image preview functionality
+- [x] Implement error handling and loading states
+
+### Phase 3: Testing & Polish
+- [ ] Add more test coverage
+- [ ] Implement admin user management
+- [ ] Add role-based access control
+- [ ] Optimize image loading and caching
+
 ## Development (Assets)
 - Filament ships its own styles for admin. If you add custom pages outside Filament:
-  - npm install
-  - npm run dev
+  - `npm install`
+  - `npm run dev`
 - For TailwindCSS, compile locally only; SiteGround will serve built assets from `public/build`.
 
 ## Architecture
