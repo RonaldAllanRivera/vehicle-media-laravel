@@ -1,0 +1,28 @@
+# Laravel
+/vendor/
+/node_modules/
+/public/hot
+/public/storage
+/storage/*.key
+.env
+.env.backup
+.env.*
+Homestead.yaml
+Homestead.json
+/.idea/
+/.vscode/
+.phpunit.result.cache
+.php-cs-fixer.cache
+composer.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+/public/build/
+/resources/css/app.css.map
+/resources/js/app.js.map
+
+# OS junk
+.DS_Store
+Thumbs.db
