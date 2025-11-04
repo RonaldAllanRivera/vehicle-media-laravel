@@ -10,6 +10,7 @@ Admin tool to search vehicle media by year, make, model, and trim, powered by Ve
 - [x] Unit and feature tests
 - [x] Image previews grouped by category (exterior, interior, colors)
 - [x] Configurable API settings via environment variables
+- [x] Per-image download and bulk ZIP download of selected images
 
 ## Requirements
 - PHP >= 8.2
@@ -67,6 +68,16 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
   - `npm install`
   - `npm run dev`
 - For TailwindCSS, compile locally only; SiteGround will serve built assets from `public/build`.
+
+## Testing
+- Run all tests
+  - `php artisan test`
+- Run only unit tests
+  - `php artisan test --testsuite=Unit`
+- Run only feature tests
+  - `php artisan test --testsuite=Feature`
+- With coverage (requires Xdebug)
+  - `php artisan test --coverage`
 
 ## Architecture
 - `App/Services/VehicleDatabases/Client` – HTTP client (versioned paths, auth header, caching)
