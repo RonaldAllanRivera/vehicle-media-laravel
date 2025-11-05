@@ -163,3 +163,78 @@ Acceptance:
 - Rate-limit knobs in settings.
 - Color picker fed by API-provided colors.
 - Background removal preview when transparent toggle is on (if supported).
+
+---
+
+## Phase 9 — Dual Data Source: Live API vs Local DB (Planned)
+
+Goal: Allow admins to switch the Vehicle Media Search between the live API and a local MySQL dataset (mock/test data), without changing UI code. Default to API in prod; allow DB in local/staging for development and demos.
+
+### Architecture
+- **Provider interface**: `App\Contracts\VehicleMediaProvider` with `getMedia(int $year, string $make, string $model, string $trim, array $options = []): array` that returns the normalized payload `{ status, data: { year, make, model, trim, images: { exterior[], interior[], colors[] } } }`.
+- **Implementations**:
+  - `ApiVehicleMediaProvider` wraps `App\Services\VehicleMediaClient` (current HTTP client).
+  - `DatabaseVehicleMediaProvider` queries local tables and maps records to the normalized payload.
+- **Orchestrator**: `App\Services\VehicleMediaResolver` selects provider based on config/UI and delegates to the chosen provider. The Filament page only calls the resolver.
+
+### Config & Environment
+- `config/vehicle_media.php` add:
+  - `source` => `env('VEHICLE_MEDIA_SOURCE', 'api')` // values: `api` | `db`.
+  - `db` sub-config (e.g., table names, category enum).
+- `.env.example` add `VEHICLE_MEDIA_SOURCE=api`.
+- UI override: add a dropdown on the page to switch source per-request (falls back to config when not set).
+
+### Database Schema (MySQL/SQLite)
+- `vehicles` table: `id`, `year` (int), `make` (string), `model` (string), `trim` (string), `slug` (unique), timestamps.
+- `vehicle_images` table: `id`, `vehicle_id` (FK), `category` (enum: exterior|interior|colors), `url` (text), timestamps.
+- Indexes: (`year`, `make`, `model`, `trim`), `slug`, (`vehicle_id`, `category`).
+
+### Seeders & Mock Data
+- Create seeder `VehicleMediaSeeder` that loads from `storage/app/seeds/vehicle_media.json` or from hardcoded arrays for quick start.
+- Provide sample JSON matching the user’s structure in this plan (2017 Acura ILX ...). Seed one or more vehicles.
+- Commands:
+  - `php artisan make:migration create_vehicles_tables`
+  - `php artisan migrate`
+  - `php artisan db:seed --class=VehicleMediaSeeder`
+- Optional: `php artisan vehicle-media:import storage/app/seeds/vehicle_media.json` to import additional datasets.
+
+### Filament Page Changes
+- Add a `Source` select to the form header (or as a page-level filter): `Live API` | `Local DB` | `Auto (config)`.
+- Persist last chosen source in session so refresh keeps the selection.
+- Page calls `VehicleMediaResolver->getMedia(...)` with the selected source.
+- Existing grid logic remains unchanged (it consumes the normalized payload from the resolver).
+
+### Caching & Rate Limits
+- API provider keeps existing caching and retry/backoff.
+- DB provider can cache hydrated payloads per vehicle slug (short TTL) to avoid repeated mapping work.
+- If API returns 403 (quota), resolver can fallback to DB when available (configurable), else return placeholders.
+
+### Validation & Normalization
+- Single normalization layer returns the exact JSON shape shown in the spec to keep the UI simple.
+- Enforce max images per category if needed (e.g., `limit` option).
+
+### Testing
+- Unit tests:
+  - Resolver selects correct provider per config/UI.
+  - DB provider maps records to normalized payload; handles no images per category.
+  - API provider behavior with `Http::fake()` for success, 4xx, 5xx.
+- Feature tests:
+  - Filament page renders results from DB provider with the mock dataset.
+  - Switching source via dropdown correctly switches provider.
+
+### Security & Access
+- API key only loaded when `source=api`.
+- Seeders and JSON imports only run in `local`/`staging` by default; guard with `app()->environment()`.
+
+### Rollout Plan
+1. Add contracts, resolver, and DB provider stubs.
+2. Add migrations and seeders; seed mock data.
+3. Wire resolver into `VehicleMediaSearch::search()`.
+4. Add Source dropdown to page; default from config.
+5. Add tests (resolver + providers + page feature).
+6. Document `.env` switch and seed steps in README.
+
+### Acceptance Criteria
+- Admin can toggle between `Live API` and `Local DB` on `/admin/vehicle-media-search` and see results without code changes.
+- Grid shows 5x3 responsive cards for both sources.
+- When API is rate-limited (403), DB fallback (if enabled) or placeholders are shown with a clear message.

@@ -11,6 +11,7 @@ Admin tool to search vehicle media by year, make, model, and trim, powered by Ve
 - [x] Image previews grouped by category (exterior, interior, colors)
 - [x] Configurable API settings via environment variables
 - [x] Per-image download and bulk ZIP download of selected images
+- [x] Dual data source: Live API, Local DB (seeded), or Local JSON (mock) with UI toggle
 
 ## Requirements
 - PHP >= 8.2
@@ -27,7 +28,7 @@ Admin tool to search vehicle media by year, make, model, and trim, powered by Ve
    - php artisan make:filament-user
 3. Configure environment:
    - Copy `.env.example` to `.env`
-   - Set values below (API key provided by Vehicle Databases):
+   - Set values below. If you have no API credits, set `VEHICLE_MEDIA_SOURCE=json` to use the local mock JSON endpoint or `db` to use the seeded database.
 
 ```
 VEHICLE_DB_API_KEY=your_api_key_here
@@ -37,21 +38,27 @@ VEHICLE_DB_TIMEOUT=12
 VEHICLE_DB_RETRIES=2
 VEHICLE_DB_SLEEP_MS=350
 VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
+
+# Dual-source controls
+VEHICLE_MEDIA_SOURCE=json   # api | db | json
+VEHICLE_MEDIA_JSON_BASE=http://127.0.0.1:8000
+APP_URL=http://127.0.0.1:8000
 ```
 
-4. Run migrations and serve:
+4. Run migrations, seed sample vehicle media, then serve:
    - php artisan migrate
+   - php artisan db:seed --class=Database\\Seeders\\VehicleMediaSeeder
    - php artisan serve
 
 ## Development Progress
 
-### Phase 1: Setup & Authentication ✅
+### Phase 1: Setup & Authentication 
 - [x] Initialize Laravel 12 project
 - [x] Install and configure Filament 4
 - [x] Set up authentication
 - [x] Configure Tailwind CSS with Vite
 
-### Phase 2: Core Functionality ✅
+### Phase 2: Core Functionality 
 - [x] Implement VehicleMediaClient service
 - [x] Create search interface in Filament
 - [x] Add image preview functionality
@@ -62,6 +69,13 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
 - [ ] Implement admin user management
 - [ ] Add role-based access control
 - [ ] Optimize image loading and caching
+
+### Phase 9: Dual Data Source (In Progress)
+- [x] Add providers for API, DB, JSON
+- [x] Add resolver to route requests to selected provider
+- [x] Add migrations and seeder for local DB media
+- [x] Add mock JSON endpoint under `/mock/vehicle-media/...`
+- [x] Add Source selector on the page
 
 ## Development (Assets)
 - Filament ships its own styles for admin. If you add custom pages outside Filament:
@@ -80,9 +94,12 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
   - `php artisan test --coverage`
 
 ## Architecture
-- `App/Services/VehicleDatabases/Client` – HTTP client (versioned paths, auth header, caching)
-- `App/Services/VehicleSearchService` – orchestrates year-range requests, aggregates results
-- `App/Http/Livewire` or Filament Page – search form + table + actions (view/download)
+- `App/Services/VehicleMediaClient` – HTTP client for live API (versioned paths, auth header, caching)
+- `App/Services/Providers/*` – ApiVehicleMediaProvider | DatabaseVehicleMediaProvider | JsonVehicleMediaProvider
+- `App/Services/VehicleMediaResolver` – chooses provider (`api|db|json`) based on config/UI
+- `App/Models/Vehicle`, `App/Models/VehicleImage` – local DB schema for media
+- `App/Http/Controllers/MockVehicleMediaController` – mock JSON under `/mock/vehicle-media/...`
+- `App/Filament/Pages/VehicleMediaSearch` – search form + responsive 5x3 grid + actions
 - `App/Services/MediaDownloadService` – streams ZIP from URLs and cleans temp files
 - Config in `config/vehicle_media.php`
 
@@ -92,9 +109,10 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
 - We normalize API responses to `{ status, data: { year, make, model, trim, images: { exterior[], interior[], colors[] }}}`
 - Respect rate limits; throttle requests, especially across year ranges
 
-## Testing
-- php artisan test
-- HTTP fakes for API client (success, 4xx, 5xx, timeouts)
+## Using the local JSON or DB source
+- To change the base host for JSON, update `VEHICLE_MEDIA_JSON_BASE` (e.g., switch to a staging hostname).
+- In the UI, choose Source: `Local JSON` or `Local DB`, then click Search.
+- The page still renders the same normalized data.
 
 ## Deployment (SiteGround)
 - Build locally: `npm run build` (optional, for custom UI)
@@ -111,3 +129,6 @@ VEHICLE_DB_DEFAULT_IMAGES_PER_CALL=10
 
 ## Changelog
 See [CHANGELOG.md](CHANGELOG.md)
+
+## Tutorials
+See [HOWTO.md](HOWTO.md) for step-by-step guides (switching sources, seeding DB, using the mock JSON API, adding new vehicles, troubleshooting).

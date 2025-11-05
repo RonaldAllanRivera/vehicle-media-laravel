@@ -14,8 +14,6 @@
                     @endif
                 </div>
             @else
-                @php($images = $result['data']['images'] ?? [])
-
                 <form method="POST" action="{{ route('media.bulk-download') }}" class="space-y-6">
                     @csrf
                     <input type="hidden" name="year" value="{{ $result['data']['year'] ?? '' }}" />
@@ -34,46 +32,41 @@
                             </button>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 gap-8">
-                        @foreach (['exterior' => 'Exterior Images', 'interior' => 'Interior Images', 'colors' => 'Colors'] as $key => $label)
-                            @if(!empty($images[$key]))
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="text-base font-semibold">{{ $label }}</h3>
+                    <div class="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                        @foreach ($this->getGridCards() as $card)
+                            <div class="group bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col">
+                                <div class="relative">
+                                    <div class="w-full aspect-square bg-gray-50">
+                                        <img src="{{ $card['url'] }}" alt="{{ trim(($card['year'] ?? '').' '.($card['make'] ?? '').' '.($card['model'] ?? '').' '.($card['trim'] ?? '').' - '.($card['category'] ?? '')) }}" loading="lazy" decoding="async" class="w-full h-full object-cover" />
                                     </div>
-
-                                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                        @foreach ($images[$key] as $i => $url)
-                                            <div class="group bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col">
-                                                <div class="relative">
-                                                    <img src="{{ $url }}" alt="{{ ($result['data']['year'] ?? '') . ' ' . ($result['data']['make'] ?? '') . ' ' . ($result['data']['model'] ?? '') . ' ' . ($result['data']['trim'] ?? '') . ' - ' . $key }}" loading="lazy" decoding="async" class="w-full aspect-video object-cover" />
-                                                    <div class="absolute inset-0 ring-0 group-hover:ring-2 ring-primary-500 transition"></div>
-                                                    <div class="absolute top-2 left-2 bg-white/90 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide">{{ $key }}</div>
-                                                </div>
-                                                <div class="p-3 flex-1 flex flex-col gap-2">
-                                                    <div class="text-xs text-gray-600 leading-tight">
-                                                        <div><span class="font-semibold">Year:</span> {{ $result['data']['year'] ?? '' }}</div>
-                                                        <div><span class="font-semibold">Make:</span> {{ $result['data']['make'] ?? '' }}</div>
-                                                        <div><span class="font-semibold">Model:</span> {{ $result['data']['model'] ?? '' }}</div>
-                                                        <div><span class="font-semibold">Trim:</span> {{ $result['data']['trim'] ?? '' }}</div>
-                                                    </div>
-                                                    <div class="mt-auto flex items-center justify-between gap-2">
-                                                        <label class="inline-flex items-center gap-2 text-xs">
-                                                            <input type="checkbox" name="urls[]" value="{{ $url }}" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                                                            Select
-                                                        </label>
-                                                        <div class="flex items-center gap-2">
-                                                            <a href="{{ $url }}" target="_blank" class="fi-btn fi-color-gray fi-btn-size-xs">View</a>
-                                                            <a href="{{ route('media.download', ['url' => $url]) }}" class="fi-btn fi-color-primary fi-btn-size-xs">Download</a>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    <div class="absolute top-2 left-2 bg-white/90 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide">{{ $card['category'] }}</div>
+                                </div>
+                                <div class="p-3 flex-1 flex flex-col gap-2">
+                                    <div class="text-xs text-gray-600 leading-tight">
+                                        <div><span class="font-semibold">Year:</span> {{ $card['year'] }}</div>
+                                        <div><span class="font-semibold">Make:</span> {{ $card['make'] }}</div>
+                                        <div><span class="font-semibold">Model:</span> {{ $card['model'] }}</div>
+                                        <div><span class="font-semibold">Trim:</span> {{ $card['trim'] }}</div>
+                                    </div>
+                                    <div class="mt-auto flex items-center justify-between gap-2">
+                                        @if(($card['category'] ?? '') !== 'sample')
+                                            <label class="inline-flex items-center gap-2 text-xs">
+                                                <input type="checkbox" name="urls[]" value="{{ $card['url'] }}" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                Select
+                                            </label>
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ $card['url'] }}" target="_blank" class="fi-btn fi-color-gray fi-btn-size-xs">View</a>
+                                                <a href="{{ route('media.download', ['url' => $card['url']]) }}" class="fi-btn fi-color-primary fi-btn-size-xs">Download</a>
                                             </div>
-                                        @endforeach
+                                        @else
+                                            <span class="text-xs text-gray-400">Sample</span>
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ $card['url'] }}" target="_blank" class="fi-btn fi-color-gray fi-btn-size-xs">View</a>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
-                            @endif
+                            </div>
                         @endforeach
                     </div>
                 </form>
@@ -81,3 +74,4 @@
         @endif
     </div>
 </x-filament-panels::page>
+

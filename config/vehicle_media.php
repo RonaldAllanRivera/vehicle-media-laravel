@@ -20,4 +20,10 @@ return [
 
     // Caching (per criteria)
     'cache_ttl' => (int) env('VEHICLE_DB_CACHE_TTL', 3600),     // seconds
+
+    // Data source: api | db | json
+    'source' => env('VEHICLE_MEDIA_SOURCE', 'json'),
+
+    // Base URL for local JSON mock API (e.g., http://127.0.0.1:8000)
+    'json_base' => env('VEHICLE_MEDIA_JSON_BASE', env('APP_URL', 'http://127.0.0.1:8000')),
 ];
